@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Take Me Somewhere
 
-## Getting Started
+One click, zero itinerary. This Next.js App Router app sends people to a hand-curated, strange corner of the web.
 
-First, run the development server:
+## Run locally
+
+Requirements: Node 20.19+ (Node 22 is also supported), a Supabase Postgres project, and npm.
 
 ```bash
+cp .env.example .env.local
+# Fill in DATABASE_URL, DIRECT_URL, SESSION_HASH_SECRET, and CRON_SECRET.
+npm install
+npm run db:generate
+npm run db:migrate
+npm run db:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>. `DATABASE_URL` should be the Supabase pooled connection used by the app. `DIRECT_URL` should be the direct connection used by Prisma migrations. For local-only development they may point to the same database.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Next.js 16 App Router, plain JavaScript, and CSS-first UI. Server routes own database access; the interactive landing screen is a focused client component.
+- Supabase is used only as managed Postgres. Prisma 7 + `prisma-client-js` handles migrations and queries; the random selector is isolated in `src/lib/random-destination.js` and uses a parameterized Postgres raw query for weighted randomness.
+- The departure tab solves the popup-blocker problem: it opens same-origin first, reveals the find, notifies the original tab through `BroadcastChannel`, then navigates to the external HTTPS URL. A blocked popup falls back to the current tab.
+- History and the anonymous UUID live in `sessionStorage`; favorites live in `localStorage`. Votes and reports store only an HMAC-derived session hash and are deduplicated per destination.
+- Selection excludes dead, suspect, flagged, NSFW, and recently seen links. Editorial score, weirdness, vote balance, and reports influence the weighted draw.
+- `/api/cron/check-links` is scheduled every six hours in `vercel.json`. It checks a bounded batch with 8-second timeouts and needs `Authorization: Bearer $CRON_SECRET`.
 
-## Learn More
+## Commands
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run db:generate    # regenerate Prisma Client
+npm run db:migrate     # create/apply a development migration
+npm run db:deploy      # apply checked-in migrations in production
+npm run db:seed        # idempotently upsert 224 curated links
+npm run links:verify   # HEAD/GET check every seeded URL
+npm test               # Vitest unit and Route Handler tests
+npx playwright install chromium webkit
+npm run test:e2e       # Playwright (requires browser install and a running app)
+npm run lint
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The Postgres integration suite runs automatically when `TEST_DATABASE_URL` is set to a dedicated test database (never the same value as `DATABASE_URL`). Without it, those destructive-fixture tests are skipped intentionally.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The seed list is in `prisma/seed-data.cjs`. `npm run links:verify` is intentionally separate from seeding so a broken site is never silently replaced by a fabricated URL. Before a release, run the verifier and manually inspect a representative sample from every category.
 
-## Deploy on Vercel
+## API
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`POST /api/destinations/random` accepts `{ recentIds, category }` and returns a safe destination payload. `POST /api/destinations/:id/click` increments clicks and returns `204`. `PUT /api/destinations/:id/vote` accepts `UP`, `DOWN`, or `CLEAR`; `POST /api/destinations/:id/report` accepts `DEAD` or `INAPPROPRIATE`. Cron health checks use `GET /api/cron/check-links` with the cron secret.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+All mutation routes validate same-origin requests, IDs, JSON, and allowed values. Errors use `{ error: { code, message } }`.
+
+## Follow-ups
+
+The next useful additions are an authenticated curation dashboard, public submissions with a moderation queue, durable rate limiting, analytics, screenshot/content safety review, and a faster random-sampling strategy if the catalog grows beyond a few thousand links.

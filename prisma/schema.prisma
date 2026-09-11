@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum HealthStatus {
+  HEALTHY
+  SUSPECT
+  DEAD
+}
+
+enum ModerationStatus {
+  APPROVED
+  FLAGGED
+}
+
+enum VoteValue {
+  UP
+  DOWN
+}
+
+enum ReportReason {
+  DEAD
+  INAPPROPRIATE
+}
+
+model Category {
+  id          String        @id @default(uuid())
+  slug        String        @unique
+  label       String
+  description String
+  accent      String
+  sortOrder   Int           @default(0)
+  destinations Destination[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Destination {
+  id                   String             @id @default(uuid())
+  url                  String             @unique
+  title                String
+  description          String
+  tags                 String[]
+  categoryId           String
+  category             Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  healthStatus         HealthStatus       @default(HEALTHY)
+  moderationStatus     ModerationStatus   @default(APPROVED)
+  isNsfw               Boolean            @default(false)
+  clickCount           Int                @default(0)
+  upvotes              Int                @default(0)
+  downvotes            Int                @default(0)
+  reportCount          Int                @default(0)
+  editorialScore       Int                @default(3)
+  weirdness            Int                @default(3)
+  consecutiveFailures  Int                @default(0)
+  lastHttpStatus       Int?
+  lastFailureReason    String?
+  lastCheckedAt        DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  votes               DestinationVote[]
+  reports             DestinationReport[]
+
+  @@index([categoryId, healthStatus, moderationStatus, isNsfw])
+  @@index([lastCheckedAt])
+  @@index([reportCount])
+}
+
+model DestinationVote {
+  id             String      @id @default(uuid())
+  destinationId  String
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  sessionHash    String
+  value          VoteValue
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@unique([destinationId, sessionHash])
+  @@index([sessionHash])
+}
+
+model DestinationReport {
+  id             String      @id @default(uuid())
+  destinationId  String
+  destination    Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  sessionHash    String
+  reason         ReportReason
+  createdAt      DateTime    @default(now())
+
+  @@unique([destinationId, sessionHash])
+  @@index([sessionHash])
+}
