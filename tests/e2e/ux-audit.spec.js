@@ -22,6 +22,7 @@ test("the primary trip action stays visible without horizontal page overflow", a
     expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
     expect(await page.evaluate(() => document.body.scrollWidth)).toBe(viewport.width);
+    expect(await page.locator(".vibe-picker").evaluate((element) => element.offsetHeight - element.clientHeight)).toBe(0);
   }
 });
 

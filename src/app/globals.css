@@ -52,7 +52,8 @@ h1, h2, p { margin-top: 0; }
 .button-label { font-family: var(--font-display), Impact, sans-serif; font-size: clamp(14px, 2vw, 20px); line-height: 1; text-transform: uppercase; letter-spacing: -.04em; }
 .button-arrow { font-size: 22px; line-height: .5; }
 .portal-status { height: 18px; color: var(--muted); font-size: 10px; letter-spacing: .08em; }
-.vibe-picker { display: flex; justify-content: center; flex-wrap: wrap; align-items: center; gap: 8px; margin: 36px auto 0; max-width: 760px; }
+.vibe-picker { display: flex; justify-content: center; flex-wrap: wrap; align-items: center; gap: 8px; margin: 36px auto 0; max-width: 760px; scrollbar-width: none; -ms-overflow-style: none; }
+.vibe-picker::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .picker-label { color: #706a80; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; margin-right: 4px; }
 .vibe-pill { border: 1px solid rgba(247,240,218,.14); color: #a5a0b5; background: transparent; border-radius: 100px; padding: 8px 12px; font-size: 10px; transition: .2s; }
 .vibe-pill:hover, .vibe-pill.active { color: var(--ink); background: var(--paper); border-color: var(--paper); }
@@ -285,14 +286,14 @@ button:disabled { cursor: wait; opacity: .68; }
 }
 
 @media (min-width: 601px) and (max-height: 720px) {
-  .hero { max-width: 1100px; margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, .78fr); grid-template-areas: "title portal" "copy portal" "status portal" "vibes vibes"; column-gap: clamp(20px, 5vw, 70px); align-items: center; text-align: left; }
+  .hero { width: min(1100px, 100%); max-width: 1100px; margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, .78fr); grid-template-areas: "title portal" "copy portal" "status portal" "vibes vibes"; column-gap: clamp(20px, 5vw, 70px); align-items: center; text-align: left; }
   .hero h1 { grid-area: title; align-self: end; font-size: clamp(46px, 6vw, 78px); margin: 0 0 14px; }
   .hero-copy { grid-area: copy; }
   .portal-button-wrap { grid-area: portal; width: min(320px, 52vh); margin: 0 auto; }
   .portal-button { width: 82%; }
   .portal-status { grid-area: status; text-align: left; }
   .vibe-selector { grid-area: vibes; max-width: none; width: 100%; margin: 7px 0 0; text-align: left; }
-  .vibe-picker { max-width: none; margin: 7px 0 0; padding: 2px 0 10px; display: flex; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; }
+  .vibe-picker { max-width: none; margin: 7px 0 0; padding: 2px 0 10px; display: flex; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: none; }
   .vibe-pill { flex: 0 0 auto; }
   .reveal-card { margin-top: 32px; }
 }
