@@ -110,26 +110,31 @@ export default function Explorer() {
       document.body.style.overflow = previousOverflow;
       const previousFocus = previousFocusRef.current;
       previousFocusRef.current = null;
-      previousFocus?.focus?.();
+      previousFocus?.focus?.({ preventScroll: true });
     };
   }, [panel]);
 
-  const openPanel = (name) => (event) => {
+  const openPanel = (event) => {
     previousFocusRef.current = event.currentTarget;
-    setPanel(name);
+    setPanel(event.currentTarget.dataset.panel);
   };
 
   const recentIds = useCallback(() => getStored(STORAGE_KEYS.history, []).map((item) => item.id).slice(0, MAX_RECENT_IDS), []);
 
   const fetchDestination = useCallback(async () => {
-    const response = await fetch("/api/destinations/random", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ recentIds: recentIds(), category: selectedCategory }),
-    });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error?.code || "DESTINATION_LOOKUP_FAILED");
-    return payload.destination;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10000);
+    try {
+      const response = await fetch("/api/destinations/random", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ recentIds: recentIds(), category: selectedCategory }),
+        signal: controller.signal,
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.code || "DESTINATION_LOOKUP_FAILED");
+      return payload.destination;
+    } finally { window.clearTimeout(timeout); }
   }, [recentIds, selectedCategory]);
 
   const handleTakeMeSomewhere = useCallback(async () => {
@@ -153,10 +158,11 @@ export default function Explorer() {
       const destination = await fetchDestination();
       setCurrent(destination);
       setHistory(saveHistory(destination));
+      setVoteCounts({ upvotes: Number(destination.upvotes || 0), downvotes: Number(destination.downvotes || 0) });
       setStage("revealed");
       setAnnouncement(`Found: ${destination.title}. Your browser kept the portal here.`);
       navigator.sendBeacon?.(`/api/destinations/${destination.id}/click`, new Blob([], { type: "application/json" }));
-      window.setTimeout(() => window.location.assign(destination.url), 950);
+      window.setTimeout(() => window.location.assign(destination.url), 1400);
     } catch (error) {
       setStage("error");
       setAnnouncement(error.message === "NO_DESTINATIONS" ? "No portals in that vibe yet. Try Surprise Me." : "The portal hiccupped. Try again in a second.");
@@ -211,8 +217,8 @@ export default function Explorer() {
       <header className="topbar">
         <Link className="wordmark" href="/" aria-label="Take Me Somewhere home"><span className="wordmark-mark">✦</span> take me<br /><em>somewhere</em></Link>
         <div className="top-actions">
-          <button type="button" className="quiet-button header-history" onClick={openPanel("history")} aria-haspopup="dialog" aria-label={`Open journey history, ${history.length} discoveries`}><span aria-hidden="true">◎</span> history <b>{history.length}</b></button>
-          <button type="button" className="quiet-button header-saved" onClick={openPanel("favorites")} aria-haspopup="dialog" aria-label={`Open saved favorites, ${favorites.length} saved`}><span aria-hidden="true">♡</span> saved <b>{favorites.length}</b></button>
+          <button type="button" className="quiet-button header-history" data-panel="history" onClick={openPanel} aria-haspopup="dialog" aria-label={`Open journey history, ${history.length} discoveries`}><span aria-hidden="true">◎</span> history <b>{history.length}</b></button>
+          <button type="button" className="quiet-button header-saved" data-panel="favorites" onClick={openPanel} aria-haspopup="dialog" aria-label={`Open saved favorites, ${favorites.length} saved`}><span aria-hidden="true">♡</span> saved <b>{favorites.length}</b></button>
           <Link className="quiet-button nav-link submit-home-link header-submit" href="/submit">submit a site ↗</Link>
           <Link className="quiet-button nav-link header-about" href="/about">about</Link>
         </div>
@@ -245,7 +251,7 @@ export default function Explorer() {
       <section ref={revealRef} className={`reveal-card ${current ? "visible" : ""} ${stage === "loading" ? "scanning" : ""}`} aria-busy={stage === "loading"} aria-label="Latest discovery">
         {current ? <>
           <div className="reveal-topline"><span className="ticket-label">latest find / {categoryLabel(current.category)}</span><span className="weirdness">weirdness <b>{"✦".repeat(Math.max(1, Math.min(5, current.weirdness || 3)))}</b></span></div>
-          <div className="reveal-content"><div><p className="reveal-kicker">you are going to…</p><h2>{current.title}</h2><p>{current.description}</p></div><div className="reveal-actions"><button type="button" onClick={toggleFavorite} className={`icon-action ${isFavorite ? "selected" : ""}`} aria-pressed={Boolean(isFavorite)} aria-label={isFavorite ? "Remove from saved" : "Save this find"}>{isFavorite ? "♥" : "♡"}</button><button type="button" onClick={openPanel("report")} className="icon-action" aria-haspopup="dialog" aria-label="Report this destination">⚑</button></div></div>
+          <div className="reveal-content"><div><p className="reveal-kicker">you are going to…</p><h2>{current.title}</h2><p>{current.description}</p></div><div className="reveal-actions"><button type="button" onClick={toggleFavorite} className={`icon-action ${isFavorite ? "selected" : ""}`} aria-pressed={Boolean(isFavorite)} aria-label={isFavorite ? "Remove from saved" : "Save this find"}>{isFavorite ? "♥" : "♡"}</button><button type="button" data-panel="report" onClick={openPanel} className="icon-action" aria-haspopup="dialog" aria-label="Report this destination">⚑</button></div></div>
           <div className="vote-row"><span>Did it spark joy?</span><button type="button" disabled={voteBusy} aria-pressed={userVote === "UP"} onClick={() => sendVote("UP")} className={userVote === "UP" ? "voted" : ""}>↑ yes <small>{voteCounts.upvotes}</small></button><button type="button" disabled={voteBusy} aria-pressed={userVote === "DOWN"} onClick={() => sendVote("DOWN")} className={userVote === "DOWN" ? "voted" : ""}>↓ no <small>{voteCounts.downvotes}</small></button>{reportSent && <span className="reported">thanks for the signal</span>}</div>
         </> : <div className="empty-reveal"><span className="empty-star">✦</span><span>Your next find will land here.</span></div>}
       </section>

@@ -120,6 +120,7 @@ button:disabled { cursor: wait; opacity: .68; }
 .hero h1 { text-wrap: balance; }
 .hero h1 span { display: inline-block; max-width: 100%; }
 .button-label { max-width: 82%; text-wrap: balance; }
+.portal-status { height: auto; min-height: 18px; line-height: 1.5; }
 .vibe-selector { max-width: 800px; margin: 26px auto 0; text-align: center; }
 .picker-label { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
 .picker-label small { color: #8b859b; font-size: 8px; letter-spacing: .08em; }
@@ -144,10 +145,13 @@ button:disabled { cursor: wait; opacity: .68; }
 .about-grid a, .text-link, .admin-card a { color: var(--coral-ink); }
 .about-grid p a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .admin-main .eyebrow-text { color: var(--coral); }
+.field small, .admin-row small { color: #625d6c; }
 .about-grid p, .admin-card p { font-size: 13px; }
 .primary-action { line-height: 1.2; }
 .submit-card h1 { font-size: clamp(52px, 7vw, 84px); }
 .admin-login-card h1 { font-size: clamp(54px, 7vw, 82px); overflow-wrap: anywhere; }
+.admin-error-card .primary-action { margin: 22px 0 16px; }
+.admin-error-card .text-link { display: flex; align-items: center; min-height: 44px; width: fit-content; }
 .submit-form { margin-top: 28px; gap: 16px; }
 .input { min-height: 46px; }
 .textarea { min-height: 112px; }
@@ -159,8 +163,14 @@ button:disabled { cursor: wait; opacity: .68; }
 .departure-content > p:not(.departure-kicker) { max-width: 62ch; line-height: 1.6; }
 .departure-return { margin-top: 24px; }
 .admin-nav button, .back-home { min-height: 44px; white-space: nowrap; }
+.admin-header > div { display: flex; align-items: center; gap: 10px; }
+.admin-header .admin-email { margin: 0; }
+.admin-header .admin-button { margin: 0; color: var(--paper); border-color: rgba(247,240,218,.32); }
+.admin-header .admin-button:hover { color: var(--ink); background: var(--acid); border-color: var(--acid); }
 .admin-status { max-width: 45ch; line-height: 1.45; }
 .admin-button { line-height: 1.2; }
+.admin-row a { display: inline-flex; align-items: center; min-height: 44px; }
+.admin-row h2 { font-family: var(--font-display), Impact, sans-serif; font-size: 20px; line-height: 1; margin: 6px 0; text-transform: uppercase; letter-spacing: -.04em; }
 .input.compact { min-height: 40px; }
 
 @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -226,6 +236,7 @@ button:disabled { cursor: wait; opacity: .68; }
   .departure-line { margin-top: 36px; }
   .admin-shell { padding: 18px 16px calc(36px + env(safe-area-inset-bottom)); }
   .admin-header { align-items: center; margin-bottom: 22px; }
+  .admin-header > div { flex-direction: column; align-items: flex-end; gap: 4px; }
   .admin-email { display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0 0 5px; text-align: right; }
   .admin-layout { gap: 18px; }
   .admin-nav { margin-inline: -16px; padding-inline: 16px; }
@@ -238,7 +249,7 @@ button:disabled { cursor: wait; opacity: .68; }
   .destination-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; width: 100%; }
   .destination-controls label, .destination-controls .compact { width: 100%; min-width: 0 !important; }
   .destination-controls .compact-check { min-height: 44px; }
-  .destination-controls > .admin-button { width: 100%; margin: 0; }
+  .destination-controls > .admin-button { grid-column: 1 / -1; width: 100%; margin: 0; }
   .boost-controls { width: 100%; align-items: stretch; flex-direction: column; }
   .boost-controls .admin-button { width: 100%; margin: 0; }
   .quick-links { display: grid; }
@@ -259,4 +270,41 @@ button:disabled { cursor: wait; opacity: .68; }
   .content-card { padding-inline: 18px; }
   .metrics-grid { grid-template-columns: 1fr 1fr; }
   .destination-controls { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 601px) and (max-height: 720px) {
+  .hero { max-width: 1100px; margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, .78fr); grid-template-areas: "title portal" "copy portal" "status portal" "vibes vibes"; column-gap: clamp(20px, 5vw, 70px); align-items: center; text-align: left; }
+  .hero h1 { grid-area: title; align-self: end; font-size: clamp(46px, 6vw, 78px); margin: 0 0 14px; }
+  .hero-copy { grid-area: copy; }
+  .portal-button-wrap { grid-area: portal; width: min(320px, 52vh); margin: 0 auto; }
+  .portal-button { width: 82%; }
+  .portal-status { grid-area: status; text-align: left; }
+  .vibe-selector { grid-area: vibes; max-width: none; width: 100%; margin: 7px 0 0; text-align: left; }
+  .vibe-picker { max-width: none; margin: 7px 0 0; padding: 2px 0 10px; display: flex; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; }
+  .vibe-pill { flex: 0 0 auto; }
+  .reveal-card { margin-top: 32px; }
+}
+
+@media (min-width: 480px) and (max-width: 600px) and (max-height: 500px) {
+  .portal-shell { padding-top: 12px; }
+  .topbar { display: flex; gap: 8px; }
+  .topbar > .wordmark { flex: 0 0 auto; }
+  .top-actions { display: flex; flex: 1; justify-content: flex-end; gap: 4px; }
+  .top-actions .quiet-button { width: auto; min-height: 44px; padding-inline: 7px; }
+  .header-history, .header-saved { width: 44px !important; font-size: 0 !important; }
+  .header-history span, .header-saved span { margin: 0; font-size: 14px !important; }
+  .header-history b, .header-saved b { margin-left: 2px; font-size: 8px; }
+  .header-submit { max-width: 92px; text-align: center; }
+  .hero { max-width: none; margin-top: 8px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(145px, .65fr); grid-template-areas: "title portal" "copy portal" "status portal" "vibes vibes"; column-gap: 12px; align-items: center; text-align: left; }
+  .hero h1 { grid-area: title; align-self: end; font-size: clamp(34px, 6.5vw, 40px); margin: 0 0 8px; }
+  .hero-copy { grid-area: copy; font-size: 10px; line-height: 1.45; }
+  .portal-button-wrap { grid-area: portal; width: min(190px, 48vh); margin: 0 auto; }
+  .portal-button { width: 82%; }
+  .button-label { font-size: 13px; }
+  .portal-status { grid-area: status; text-align: left; font-size: 8px; }
+  .vibe-selector { grid-area: vibes; width: 100%; margin: 4px 0 0; }
+  .picker-label { display: none; }
+  .vibe-picker { max-width: none; margin: 0; padding: 0 0 4px; display: flex; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
+  .vibe-picker::-webkit-scrollbar { display: none; }
+  .vibe-pill { flex: 0 0 auto; min-height: 40px; }
 }

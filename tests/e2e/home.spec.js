@@ -19,3 +19,11 @@ test("opens the internal departure tab and reveals a destination", async ({ page
   const [popup] = await Promise.all([context.waitForEvent("page"), page.getByRole("button", { name: /take me somewhere/i }).click()]);
   await expect(popup.getByText("A Very Odd Portal")).toBeVisible({ timeout: 10_000 });
 });
+
+test("uses the current tab when popups are blocked", async ({ page }) => {
+  await page.addInitScript(() => { window.open = () => null; });
+  await page.goto("/");
+  await page.getByRole("button", { name: /take me somewhere/i }).click();
+  await expect(page.getByText(/browser kept the portal here/i)).toBeVisible();
+  await expect.poll(() => page.url()).toContain("https://example.com/tms");
+});

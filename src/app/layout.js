@@ -10,5 +10,5 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  return <html lang="en" className={`${display.variable} ${mono.variable}`}><body><a className="skip-link" href="#main-content">Skip to content</a>{children}</body></html>;
+  return <html lang="en" data-scroll-behavior="smooth" className={`${display.variable} ${mono.variable}`}><body><a className="skip-link" href="#main-content">Skip to content</a>{children}</body></html>;
 }
