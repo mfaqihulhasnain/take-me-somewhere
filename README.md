@@ -13,6 +13,7 @@ npm install
 npm run db:generate
 npm run db:migrate
 npm run db:seed
+npm run admin:bootstrap
 npm run dev
 ```
 
@@ -46,6 +47,18 @@ The Postgres integration suite runs automatically when `TEST_DATABASE_URL` is se
 
 The seed list is in `prisma/seed-data.cjs`. `npm run links:verify` is intentionally separate from seeding so a broken site is never silently replaced by a fabricated URL. Before a release, run the verifier and manually inspect a representative sample from every category.
 
+## Curation and submissions
+
+`/about` explains the project and privacy model. `/submit` accepts public HTTPS recommendations into a pending moderation queue; submitters do not receive an account, and no IP address is stored. Approved submissions become destinations with neutral editorial scores and remain subject to health and moderation filters.
+
+Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env.local` for the one-time bootstrap, then run:
+
+```bash
+npm run admin:bootstrap
+```
+
+Remove `ADMIN_PASSWORD` after bootstrapping. The owner console is at `/admin`. It uses an HTTP-only, seven-day session cookie and server-side session records. The console can approve/reject submissions, flag or retire destinations, edit scores and per-destination boosts, and change the ranking formula and category multipliers without a code deployment.
+
 ## API
 
 `POST /api/destinations/random` accepts `{ recentIds, category }` and returns a safe destination payload. `POST /api/destinations/:id/click` increments clicks and returns `204`. `PUT /api/destinations/:id/vote` accepts `UP`, `DOWN`, or `CLEAR`; `POST /api/destinations/:id/report` accepts `DEAD` or `INAPPROPRIATE`. Cron health checks use `GET /api/cron/check-links` with the cron secret.
@@ -54,4 +67,4 @@ All mutation routes validate same-origin requests, IDs, JSON, and allowed values
 
 ## Follow-ups
 
-The next useful additions are an authenticated curation dashboard, public submissions with a moderation queue, durable rate limiting, analytics, screenshot/content safety review, and a faster random-sampling strategy if the catalog grows beyond a few thousand links.
+The next useful additions are email notifications for submitters, a richer moderation audit log, durable rate limiting, analytics, screenshot/content safety review, paid promotion with an explicit sponsored label, and a faster random-sampling strategy if the catalog grows beyond a few thousand links.

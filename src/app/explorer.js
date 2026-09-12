@@ -7,7 +7,7 @@ import { CATEGORIES, MAX_HISTORY_ITEMS, MAX_RECENT_IDS } from "@/lib/constants";
 const STORAGE_KEYS = { session: "tms-session-id", history: "tms-history", favorites: "tms-favorites" };
 
 function getStored(key, fallback) {
-  try { return JSON.parse(window[key === STORAGE_KEYS.session ? "sessionStorage" : "localStorage"].getItem(key)) || fallback; } catch { return fallback; }
+  try { return JSON.parse(window[key === STORAGE_KEYS.session || key === STORAGE_KEYS.history ? "sessionStorage" : "localStorage"].getItem(key)) || fallback; } catch { return fallback; }
 }
 
 function categoryLabel(slug) {
@@ -50,6 +50,8 @@ export default function Explorer() {
       if (!destination?.id) return;
       setCurrent(destination);
       setHistory(saveHistory(destination));
+      setVoteCounts({ upvotes: 0, downvotes: 0 });
+      setUserVote(null);
       setStage("revealed");
       setAnnouncement(`Found: ${destination.title}. Opening the portal.`);
     };
@@ -131,7 +133,8 @@ export default function Explorer() {
   const report = async (reason) => {
     if (!current || !sessionId) return;
     try {
-      await fetch(`/api/destinations/${current.id}/report`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, reason }) });
+      const response = await fetch(`/api/destinations/${current.id}/report`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, reason }) });
+      if (!response.ok) throw new Error("Report failed");
       setReportSent(true);
       setPanel(null);
       setAnnouncement("Noted. A tiny internet caretaker will investigate.");
@@ -148,6 +151,8 @@ export default function Explorer() {
         <div className="top-actions">
           <button className="quiet-button" onClick={() => setPanel("history")} aria-label={`Open journey history, ${history.length} discoveries`}><span>◎</span> history <b>{history.length}</b></button>
           <button className="quiet-button" onClick={() => setPanel("favorites")} aria-label={`Open saved favorites, ${favorites.length} saved`}><span>♡</span> saved <b>{favorites.length}</b></button>
+          <Link className="quiet-button nav-link submit-home-link" href="/submit">submit a site ↗</Link>
+          <Link className="quiet-button nav-link" href="/about">about</Link>
         </div>
       </header>
 
@@ -182,7 +187,7 @@ export default function Explorer() {
         </> : <div className="empty-reveal"><span className="empty-star">✦</span><span>Your next find will land here.</span></div>}
       </section>
 
-      <footer className="footer-note"><span>curated with curiosity</span><span className="footer-dots">•••</span><span>no algorithmic itinerary</span></footer>
+      <footer className="footer-note"><span>curated with curiosity</span><span className="footer-dots">•••</span><span>no algorithmic itinerary</span><span className="footer-links"><Link href="/about">about</Link><Link href="/submit">submit a site</Link></span></footer>
 
       {panel && <div className="panel-backdrop" role="presentation" onClick={() => setPanel(null)}><section className="side-panel" role="dialog" aria-modal="true" aria-label={panel === "report" ? "Report destination" : panel === "history" ? "Journey history" : "Saved destinations"} onClick={(event) => event.stopPropagation()}>
         <button className="close-panel" onClick={() => setPanel(null)} aria-label="Close panel">×</button>

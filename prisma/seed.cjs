@@ -29,9 +29,10 @@ async function main() {
     await prisma.destination.upsert({
       where: { url: item.url },
       update: { title: item.title, description: item.description, tags: item.tags, categoryId: categories.get(item.category), editorialScore: item.editorialScore, weirdness: item.weirdness, isNsfw: false },
-      create: { url: item.url, title: item.title, description: item.description, tags: item.tags, categoryId: categories.get(item.category), editorialScore: item.editorialScore, weirdness: item.weirdness, isNsfw: false, healthStatus: "HEALTHY", moderationStatus: "APPROVED" },
+      create: { url: item.url, title: item.title, description: item.description, tags: item.tags, categoryId: categories.get(item.category), editorialScore: item.editorialScore, weirdness: item.weirdness, rankingBoost: 1, isNsfw: false, healthStatus: "HEALTHY", moderationStatus: "APPROVED" },
     });
   }
+  await prisma.rankingConfig.upsert({ where: { id: "default" }, update: {}, create: { id: "default" } });
   console.log(`Seeded ${entries.length} unique destinations across ${categories.size} categories.`);
 }
 
