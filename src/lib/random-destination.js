@@ -9,7 +9,7 @@ function selectionQuery({ recentIds, category }) {
     : Prisma.empty;
 
   return Prisma.sql`
-    SELECT d.id, d.url, d.title, d.description, d.tags, d.weirdness, c.slug AS category
+    SELECT d.id, d.url, d.title, d.description, d.tags, d.weirdness, d.upvotes, d.downvotes, c.slug AS category
     FROM "Destination" d
     JOIN "Category" c ON c.id = d."categoryId"
     WHERE d."healthStatus" = 'HEALTHY'

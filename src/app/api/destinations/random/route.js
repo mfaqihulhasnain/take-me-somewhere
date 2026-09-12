@@ -37,6 +37,8 @@ export async function POST(request) {
         category: destination.category,
         tags: destination.tags,
         weirdness: Number(destination.weirdness),
+        upvotes: Number(destination.upvotes || 0),
+        downvotes: Number(destination.downvotes || 0),
       },
       repeated: result.repeated,
     });

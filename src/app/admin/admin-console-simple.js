@@ -54,7 +54,7 @@ function RankingInfo({ onGoBoosts }) {
 }
 
 function AdminNav({ tab, setTab, pending }) {
-  return <aside className="admin-nav" aria-label="Admin sections">{[["overview", "dashboard"], ["submissions", `submissions ${pending}`], ["destinations", "destination desk"], ["boosts", "boost entries"], ["ranking", "ranking lab"]].map(([key, label]) => <button key={key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{label}</button>)}<Link href="/" className="back-home">← public lounge</Link></aside>;
+  return <nav className="admin-nav" aria-label="Admin sections">{[["overview", "dashboard"], ["submissions", `submissions ${pending}`], ["destinations", "destination desk"], ["boosts", "boost entries"], ["ranking", "ranking lab"]].map(([key, label]) => <button type="button" key={key} aria-pressed={tab === key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{label}</button>)}<Link href="/" className="back-home">← public lounge</Link></nav>;
 }
 
 export default function AdminConsoleSimple() {
