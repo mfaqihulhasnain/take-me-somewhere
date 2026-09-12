@@ -8,7 +8,7 @@ Requirements: Node 20.19+ (Node 22 is also supported), a Supabase Postgres proje
 
 ```bash
 cp .env.example .env.local
-# Fill in DATABASE_URL, DIRECT_URL, SESSION_HASH_SECRET, and CRON_SECRET.
+# Fill in DATABASE_URL, DIRECT_URL, SESSION_HASH_SECRET, and CRON_SECRET. Optionally add a GA4 ID in NEXT_PUBLIC_GA_MEASUREMENT_ID to count visits.
 npm install
 npm run db:generate
 npm run db:migrate
@@ -19,13 +19,15 @@ npm run dev
 
 Open <http://localhost:3000>. `DATABASE_URL` should be the Supabase pooled connection used by the app. `DIRECT_URL` should be the direct connection used by Prisma migrations. For local-only development they may point to the same database.
 
+Google Analytics is optional. Create a GA4 web data stream, copy its `G-XXXXXXXXXX` measurement ID into `NEXT_PUBLIC_GA_MEASUREMENT_ID` in `.env.local` and your Vercel Production environment, then redeploy. The app sends basic page views only; Google Signals, ad personalization, and custom events are disabled.
+
 ## Architecture
 
 - Next.js 16 App Router, plain JavaScript, and CSS-first UI. Server routes own database access; the interactive landing screen is a focused client component.
 - Supabase is used only as managed Postgres. Prisma 7 + `prisma-client-js` handles migrations and queries; the random selector is isolated in `src/lib/random-destination.js` and uses a parameterized Postgres raw query for weighted randomness.
 - The departure tab solves the popup-blocker problem: it opens same-origin first, reveals the find, notifies the original tab through `BroadcastChannel`, then navigates to the external HTTPS URL. A blocked popup falls back to the current tab.
 - History and the anonymous UUID live in `sessionStorage`; favorites live in `localStorage`. Votes and reports store only an HMAC-derived session hash and are deduplicated per destination.
-- Selection excludes dead, suspect, flagged, NSFW, and recently seen links. Editorial score, weirdness, vote balance, and reports influence the weighted draw.
+- Selection excludes dead, suspect, flagged, NSFW, and recently seen links. The MVP gives each eligible link a fresh random chance; optional individual boosts are managed separately in the owner console. Editorial and weirdness metadata are retained for future ranking experiments, while weirdness is shown as a playful result label.
 - `/api/cron/check-links` is scheduled every six hours in `vercel.json`. It checks a bounded batch with 8-second timeouts and needs `Authorization: Bearer $CRON_SECRET`.
 
 ## Commands
@@ -49,7 +51,7 @@ The seed list is in `prisma/seed-data.cjs`. `npm run links:verify` is intentiona
 
 ## Curation and submissions
 
-`/about` explains the project and privacy model. `/submit` accepts public HTTPS recommendations into a pending moderation queue; submitters do not receive an account, and no IP address is stored. Approved submissions become destinations with neutral editorial scores and remain subject to health and moderation filters.
+`/about` explains the project and privacy model. `/submit` accepts public HTTPS recommendations into a pending moderation queue; submitters do not receive an account, and no IP address is stored. Approved submissions become destinations with neutral metadata and remain subject to health and moderation filters.
 
 Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env.local` for the one-time bootstrap, then run:
 
@@ -67,4 +69,4 @@ All mutation routes validate same-origin requests, IDs, JSON, and allowed values
 
 ## Follow-ups
 
-The next useful additions are email notifications for submitters, a richer moderation audit log, durable rate limiting, analytics, screenshot/content safety review, paid promotion with an explicit sponsored label, and a faster random-sampling strategy if the catalog grows beyond a few thousand links.
+The next useful additions are email notifications for submitters, a richer moderation audit log, durable rate limiting, richer first-party analytics, screenshot/content safety review, paid promotion with an explicit sponsored label, and a deliberate ranking system that can make editorial and weirdness metadata useful if the catalog grows beyond a few thousand links.
