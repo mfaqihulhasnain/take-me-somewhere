@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { BrandLink } from "@/app/brand";
 import { CATEGORIES } from "@/lib/constants";
 
 const initial = { url: "", title: "", description: "", category: "", tags: "", contactEmail: "", isNsfw: false, attestation: false, website: "" };
@@ -27,7 +28,7 @@ export default function SubmitForm() {
   return (
     <main id="main-content" tabIndex="-1" className="info-shell">
       <nav className="info-nav" aria-label="Submission page navigation">
-        <Link className="wordmark" href="/"><span className="wordmark-mark">✦</span> take me<br /><em>somewhere</em></Link>
+        <BrandLink />
         <Link className="quiet-button nav-link" href="/about">about</Link>
       </nav>
       <section className="content-card submit-card" aria-labelledby="submit-title">

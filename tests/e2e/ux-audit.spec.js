@@ -29,6 +29,14 @@ test("mobile navigation stays on-screen and category choices expose selection st
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/");
 
+  const brand = page.getByRole("link", { name: /take me somewhere home/i });
+  const brandBox = await brand.boundingBox();
+  expect(brandBox).not.toBeNull();
+  expect(brandBox.x).toBeGreaterThanOrEqual(0);
+  expect(brandBox.x + brandBox.width).toBeLessThanOrEqual(320);
+  await expect(brand.locator("svg")).toBeVisible();
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute("href", /icon\.svg/);
+
   for (const name of [/open journey history/i, /open saved favorites/i, /submit a site/i, /^about$/i]) {
     const item = page.getByRole(name.source.startsWith("open") ? "button" : "link", { name });
     const box = await item.boundingBox();

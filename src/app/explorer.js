@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { BrandLink } from "@/app/brand";
 import { CATEGORIES, MAX_HISTORY_ITEMS, MAX_RECENT_IDS } from "@/lib/constants";
 
 const STORAGE_KEYS = { session: "tms-session-id", history: "tms-history", favorites: "tms-favorites" };
@@ -215,7 +216,7 @@ export default function Explorer() {
       <div className="orbit orbit-one" aria-hidden="true" />
       <div className="orbit orbit-two" aria-hidden="true" />
       <header className="topbar">
-        <Link className="wordmark" href="/" aria-label="Take Me Somewhere home"><span className="wordmark-mark">✦</span> take me<br /><em>somewhere</em></Link>
+        <BrandLink />
         <div className="top-actions">
           <button type="button" className="quiet-button header-history" data-panel="history" onClick={openPanel} aria-haspopup="dialog" aria-label={`Open journey history, ${history.length} discoveries`}><span aria-hidden="true">◎</span> history <b>{history.length}</b></button>
           <button type="button" className="quiet-button header-saved" data-panel="favorites" onClick={openPanel} aria-haspopup="dialog" aria-label={`Open saved favorites, ${favorites.length} saved`}><span aria-hidden="true">♡</span> saved <b>{favorites.length}</b></button>
