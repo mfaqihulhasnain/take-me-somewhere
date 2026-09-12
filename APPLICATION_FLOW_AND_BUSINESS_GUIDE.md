@@ -153,7 +153,7 @@ Keyboard users can use ordinary Tab and button activation. Dedicated shortcuts, 
 | --- | --- | --- |
 | Anonymous one-click discovery | Implemented | No registration barrier. |
 | Eight categories and Surprise Me | Implemented | Lightweight control over the next discovery. |
-| Weighted rather than uniform selection | Implemented | Editorial quality, unusualness, votes, and reports affect exposure. |
+| Random selection with optional owner nudge | Implemented | Eligible links are intentionally random; an owner can lightly promote one destination. |
 | Reveal in a new tab; same-tab fallback | Implemented | A distinct departure experience with a fallback for blocked popups. |
 | Recent-history exclusion and repeat fallback | Server support implemented; browser persistence defective | Repeat prevention is currently weaker than intended. |
 | History panel | Implemented UI; storage defect | Not yet a reliable session travel log. |
@@ -222,7 +222,7 @@ These are relative links from this guide to the implementation.
 | [src/app/explorer.js](src/app/explorer.js) | Categories, launch/fallback, storage, messages, ticket, panels, favorites, feedback. |
 | [src/app/about/page.js](src/app/about/page.js) | Public editorial, privacy, and product explanation. |
 | [src/app/submit/submit-form.js](src/app/submit/submit-form.js) | Accessible public recommendation form and pending-review acknowledgement. |
-| [src/app/admin/admin-console.js](src/app/admin/admin-console.js) | Owner login, metrics, moderation queue, destination desk, and formula editor. |
+| [src/app/admin/admin-console-simple.js](src/app/admin/admin-console-simple.js) | Owner login, metrics, moderation queue, neutral destination desk, boost entries, and MVP random-ranking explanation. |
 | [src/app/departure/page.js](src/app/departure/page.js) | Departure-page metadata and wrapper. |
 | [src/app/departure/departure.js](src/app/departure/departure.js) | Lookup, reveal, history copy, opener messages, beacon, redirect, error close. |
 | [src/app/globals.css](src/app/globals.css) | Entire visual system, responsive rules, animation and reduced motion. |
@@ -230,7 +230,7 @@ These are relative links from this guide to the implementation.
 | [src/lib/constants.js](src/lib/constants.js) | Fixed category definitions and numeric limits/thresholds. |
 | [src/lib/security.js](src/lib/security.js) | Origin check, session hash, JSON parser, error envelope. |
 | [src/lib/prisma.js](src/lib/prisma.js) | pg pool, Prisma adapter and reusable client. |
-| [src/lib/random-destination.js](src/lib/random-destination.js) | Query construction, weighted selection, recent filtering, repeat fallback. |
+| [src/lib/random-destination.js](src/lib/random-destination.js) | Simple random selection, eligibility filtering, optional destination nudge, and repeat fallback. |
 | [src/lib/admin-auth.js](src/lib/admin-auth.js) | Password verification, hashed owner sessions, HTTP-only cookie helpers. |
 | [src/lib/validation.js](src/lib/validation.js) | Shared URL, text, tag, category, email, and numeric validation. |
 | [src/lib/health.js](src/lib/health.js) | HTTP link checker and health-state transition function. |
@@ -239,7 +239,7 @@ These are relative links from this guide to the implementation.
 | [Vote route](src/app/api/destinations/[id]/vote/route.js) | Vote validation, hashing, serializable transaction and retry. |
 | [Report route](src/app/api/destinations/[id]/report/route.js) | Deduplication, report storage, threshold-based status changes. |
 | [Cron route](src/app/api/cron/check-links/route.js) | Secret authorization, oldest-first selection, bounded concurrent health checks. |
-| [Admin API routes](src/app/api/admin/) | Owner session, submission review, destination editing, and ranking configuration. |
+| [Admin API routes](src/app/api/admin/) | Owner session, submission review, destination editing, and simple per-entry boost updates. |
 | [Submission API](src/app/api/submissions/route.js) | Public HTTPS recommendation validation and pending queue creation. |
 | [prisma/schema.prisma](prisma/schema.prisma) | Models, relations, defaults, uniqueness, indexes, enum definitions. |
 | [Initial migration](prisma/migrations/0001_init/migration.sql) | SQL creation of schema, tables, enums, indexes, foreign keys. |
@@ -381,7 +381,7 @@ Those numbers are illustrative. The actual batch may contain fewer rows. Unlike 
 
 ## 7. How random selection actually works
 
-The selector in [random-destination.js](src/lib/random-destination.js) first normalizes the recent IDs: remove duplicates, retain strings matching its loose ID expression, and cap at 50. It joins `Destination` to `Category` and filters to rows satisfying all of:
+The MVP selector in [random-destination.js](src/lib/random-destination.js) first normalizes the recent IDs: remove duplicates, retain strings matching its loose ID expression, and cap at 50. It joins `Destination` to `Category` and filters to rows satisfying all of:
 
 - `healthStatus = HEALTHY`.
 - `moderationStatus = APPROVED`.
@@ -389,9 +389,9 @@ The selector in [random-destination.js](src/lib/random-destination.js) first nor
 - The requested category, if any.
 - An ID outside the normalized recent list.
 
-It does **not** discard every destination with any report. A single report reduces its weight while it remains otherwise eligible. Threshold-based health/moderation changes remove it from selection. A downvote also changes weight, not eligibility.
+Reports and votes are still recorded for moderation and future experiments, but they do not feed a complex formula in the MVP. Threshold-based health/moderation changes remove a destination from selection. The only optional ranking nudge is the admin-controlled per-destination `rankingBoost`, which defaults to `1` and is applied gently.
 
-The code's weight is:
+The current MVP draw is `-ln(random()) / max(0.1, rankingBoost)`. With the default boost of `1`, every eligible row has an equal random chance. A boost of `2` gives one destination approximately twice the chance of a normal entry, not a guarantee. The historical formula below is retained only as a record of the pre-MVP design and is not used by the current selector.
 
 ```text
 voteContribution = clamp((upvotes - downvotes) / max(5, upvotes + downvotes), -0.75, 0.75)
@@ -408,15 +408,15 @@ priority = -ln(max(random(), 0.000001)) / effectiveWeight
 Choose the eligible row with the smallest priority.
 ```
 
-Higher positive weight generally increases the chance of selection, but does not guarantee it. Under the usual untruncated exponential-race interpretation, chances are proportional to weights; the implementation also clamps the random input, so that relationship is approximate at the extreme tail. The floor prevents negative or zero weights from breaking the draw.
+In the historical design, higher positive weight generally increased the chance of selection, but it is not part of the MVP path.
 
-Example: score 3, weirdness 3, no votes, no reports gives weight 1. Score 5 and weirdness 4 gives 1.54 before feedback. Ten upvotes and no downvotes adds the capped 0.75. One report subtracts 0.20. Click count does not affect ranking.
+Editorial scores, weirdness, votes, and reports remain available to the owner for moderation and later product experiments; click count does not affect the MVP random draw.
 
 “Surprise me” is a weighted draw across all eligible destinations, not an equal draw of categories followed by a draw within one category. Even though initial category counts are equal, scores, feedback, and removals change category exposure. There is no personalized learning model; the browser supplies category and recent IDs, while ranking uses shared aggregate signals.
 
-If the query finds nothing and the recent list was nonempty, it repeats once with an empty recent list, retaining the category and safety filters. Success then yields `repeated: true`. Otherwise no destination is returned. A one-link category can therefore keep returning that same link; a healthy service cannot guarantee novelty forever.
+**MVP clarification:** “Surprise me” is a random draw across all eligible destinations; category counts naturally influence how often a category appears, and there is no category-balancing formula. If a category is selected, randomness is limited to that category. If the query finds nothing and the recent list was nonempty, it repeats once with an empty recent list, retaining the category and safety filters. Success then yields `repeated: true`. Otherwise no destination is returned. A one-link category can therefore keep returning that same link; a healthy service cannot guarantee novelty forever.
 
-`Prisma.sql`, interpolated parameters, and `Prisma.join` are used instead of concatenating raw user strings into SQL. The raw query computes a weight column, but the route maps only the public response fields and does not expose that column.
+`Prisma.sql`, interpolated parameters, and `Prisma.join` are used instead of concatenating raw user strings into SQL. The route maps only the public response fields and does not expose internal ranking fields.
 
 At 224 entries, scanning eligible candidates is modest. A changing random priority must still be computed across candidates; normal indexes do not make this an O(1) lookup. Large catalogs should be benchmarked before introducing precomputed pools or alternative sampling.
 
@@ -928,7 +928,7 @@ The public product now has two supporting routes. `/about` explains the editoria
 
 The owner opens `/admin`. The one-time `npm run admin:bootstrap` command creates or rotates an owner account from `ADMIN_EMAIL` and `ADMIN_PASSWORD` using a salted Node `scrypt` hash. Login creates a random seven-day token; only its SHA-256 hash is stored in `AdminSession`, while the browser receives an HTTP-only, same-site cookie. The control room exposes overview metrics, a submission review queue, destination search/editing, and a ranking lab. Approving a submission upserts a destination; rejecting it preserves the review note. Each destination can be flagged, retired, marked mature, moved between categories, or given editorial/weirdness scores and a `rankingBoost`.
 
-Ranking controls are persisted in the `RankingConfig` singleton and category `weightMultiplier` fields. The random selector reads these values in one parameterized SQL query and combines base weight, editorial score, weirdness, vote balance/cap, report penalty, category multiplier, and per-destination boost before applying `-ln(random()) / weight`. Safe server-side ranges prevent an accidental zero/negative weight or runaway multiplier. This lets the owner tune the product without changing code or redeploying.
+The MVP picker deliberately does not expose or apply a complex ranking formula. It performs a fresh random draw; the owner controls the catalog through approval, health/moderation status, category assignment, and an optional small per-destination `rankingBoost` nudge in the Destinations desk. The reserved `RankingConfig` and category multiplier fields remain in the migration for a future experiment, but Ranking Lab is intentionally a minimal explanation screen today.
 
 The database migration `20260912001532_admin_submissions_ranking` adds `SubmissionStatus`, category multipliers, destination boosts, ranking configuration, owner users/sessions, and submission records. The existing seed remains idempotent and now ensures neutral boosts plus the default ranking row. These additions are implemented and build-tested; production account bootstrapping still requires the owner to choose an email/password and run the documented command.
 

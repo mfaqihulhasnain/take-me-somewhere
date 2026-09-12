@@ -57,7 +57,7 @@ Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env.local` for the one-time bootstra
 npm run admin:bootstrap
 ```
 
-Remove `ADMIN_PASSWORD` after bootstrapping. The owner console is at `/admin`. It uses an HTTP-only, seven-day session cookie and server-side session records. The console can approve/reject submissions, flag or retire destinations, edit scores and per-destination boosts, and change the ranking formula and category multipliers without a code deployment.
+Remove `ADMIN_PASSWORD` after bootstrapping. The owner console is at `/admin`. It uses an HTTP-only, seven-day session cookie and server-side session records. The console can approve/reject submissions, flag or retire destinations, edit categories and scores, and optionally give an individual destination a small promotion nudge. The MVP picker remains deliberately random; future ranking experiments can use the reserved ranking configuration tables without changing the visitor experience today.
 
 ## API
 

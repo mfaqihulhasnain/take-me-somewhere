@@ -157,7 +157,6 @@ export default function Explorer() {
       </header>
 
       <section className="hero" aria-labelledby="hero-title">
-        <div className="eyebrow"><span className="eyebrow-dot" /> internet departure lounge <span className="eyebrow-line" /></div>
         <h1 id="hero-title">No plans.<br /><span>Just somewhere.</span></h1>
         <p className="hero-copy">A button to bizarre tools, beautiful rabbit holes,<br className="desktop-only" /> and the web’s best-kept little secrets.</p>
 
